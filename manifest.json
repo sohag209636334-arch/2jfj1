@@ -1,0 +1,16 @@
+{
+  "name": "مدير الديون (Admin)",
+  "short_name": "المدير",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e0eafc",
+  "theme_color": "#2c3e50",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2534/2534204.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
