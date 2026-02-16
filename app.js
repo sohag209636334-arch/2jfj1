@@ -1,158 +1,16 @@
-// === وضع العمل دون اتصال (Local Mode) ===
-// تم استبدال استيراد Firebase بمحرك تخزين محلي للتجربة
-import { hashPass } from './config.js';
+// استيراد بيانات التكوين وربط Firebase Firestore الحقيقي
+import { firebaseConfig, hashPass } from './config.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, query, where, deleteDoc, updateDoc, getDoc, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-// --- محرك قاعدة البيانات المحلية (Local Storage Engine) ---
-const DB_KEY = 'debt_app_offline_db_v1';
+// تهيئة تطبيق Firebase وقاعدة البيانات
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// دالة لجلب البيانات من الذاكرة
-function getLocalDB() {
-    const defaultDB = { customers: [], transactions: [], inventory: [], settings: {} };
-    const data = localStorage.getItem(DB_KEY);
-    return data ? JSON.parse(data) : defaultDB;
-}
-
-// دالة لحفظ البيانات في الذاكرة
-function saveLocalDB(data) {
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
-}
-
-// --- محاكاة دوال Firebase ---
-const app = {}; // وهمي
-const db = {};  // وهمي
-
-// دالة وهمية لتفعيل الكاش (لا نحتاجها محلياً)
-const enableIndexedDbPersistence = async () => {}; 
-
-// تحديد اسم المجموعة
-const collection = (db, name) => name;
-
-// إضافة مستند جديد
-const addDoc = async (colName, data) => {
-    const d = getLocalDB();
-    if (!d[colName]) d[colName] = [];
-    
-    const newId = Date.now().toString() + Math.floor(Math.random() * 1000);
-    const docData = { ...data, id: newId }; // تخزين ID
-    
-    d[colName].push(docData);
-    saveLocalDB(d);
-    
-    return { id: newId };
-};
-
-// جلب المستندات
-const getDocs = async (queryOrColName) => {
-    const d = getLocalDB();
-    let results = [];
-    
-    // إذا كان المدخل استعلام (Query)
-    if (typeof queryOrColName === 'object' && queryOrColName.colName) {
-        const list = d[queryOrColName.colName] || [];
-        // تصفية النتائج بناء على الشروط
-        results = list.filter(item => {
-            if (queryOrColName.filterType === '==') return item[queryOrColName.field] == queryOrColName.value;
-            return true;
-        });
-    } 
-    // إذا كان المدخل اسم مجموعة فقط
-    else if (typeof queryOrColName === 'string') {
-        results = d[queryOrColName] || [];
-    }
-
-    // إرجاع البيانات بتنسيق يشبه Firebase Snapshot
-    return {
-        docs: results.map(item => ({
-            id: item.id,
-            data: () => item
-        })),
-        forEach: (callback) => {
-            results.forEach(item => callback({ id: item.id, data: () => item }));
-        }
-    };
-};
-
-// تحديد مستند معين
-const doc = (db, colName, id) => ({ colName, id });
-
-// الاستعلام (Query)
-const query = (colName, whereClause) => {
-    return {
-        colName: colName,
-        field: whereClause.field,
-        filterType: whereClause.filterType,
-        value: whereClause.value
-    };
-};
-
-// شرط البحث (Where)
-const where = (field, filterType, value) => ({ field, filterType, value });
-
-// حذف مستند
-const deleteDoc = async (docRef) => {
-    const d = getLocalDB();
-    if (d[docRef.colName]) {
-        d[docRef.colName] = d[docRef.colName].filter(item => item.id !== docRef.id);
-        saveLocalDB(d);
-    }
-};
-
-// تحديث مستند
-const updateDoc = async (docRef, newData) => {
-    const d = getLocalDB();
-    if (d[docRef.colName]) {
-        const index = d[docRef.colName].findIndex(item => item.id === docRef.id);
-        if (index !== -1) {
-            d[docRef.colName][index] = { ...d[docRef.colName][index], ...newData };
-            saveLocalDB(d);
-        }
-    }
-};
-
-// جلب مستند واحد
-const getDoc = async (docRef) => {
-    const d = getLocalDB();
-    let item = null;
-    if (d[docRef.colName]) {
-        // في الإعدادات، الاسم هو المعرف أحياناً
-        if(docRef.colName === 'settings') item = d.settings[docRef.id]; 
-        else item = d[docRef.colName].find(i => i.id === docRef.id);
-    }
-    return {
-        exists: () => !!item,
-        data: () => item || {}
-    };
-};
-
-// حفظ مستند (Set) - يستخدم للإعدادات عادة
-const setDoc = async (docRef, data, options) => {
-    const d = getLocalDB();
-    if (docRef.colName === 'settings') {
-        if (!d.settings) d.settings = {};
-        if (options && options.merge) {
-            d.settings[docRef.id] = { ...d.settings[docRef.id], ...data };
-        } else {
-            d.settings[docRef.id] = data;
-        }
-        saveLocalDB(d);
-    }
-};
-
-// الدفعات (Batch) - محاكاة مبسطة
-const writeBatch = (db) => {
-    return {
-        update: (ref, data) => updateDoc(ref, data),
-        set: (ref, data) => addDoc(ref.colName, data), // تبسيط
-        delete: (ref) => deleteDoc(ref),
-        commit: async () => true
-    };
-};
-
-// --- نهاية المحرك المحلي ---
-
-// بداية كود التطبيق الأصلي (مع تعديلات طفيفة لاستخدام المحرك المحلي)
-
-enableIndexedDbPersistence(db).catch((err) => { console.log("Local Mode Active"); });
+// تفعيل وضع العمل دون اتصال (Offline Persistence) الخاص بـ Firestore
+enableIndexedDbPersistence(db).catch((err) => { 
+    console.log("Local Mode Active or Persistence Failed", err); 
+});
 
 let currentCustomer = null;
 let currentTransType = '';
@@ -670,9 +528,9 @@ window.wipeSystem = async function() {
     
     try {
         // حذف البيانات من التخزين المحلي مباشرة
-        localStorage.removeItem(DB_KEY);
+        localStorage.removeItem('debt_app_offline_db_v1'); // لتنظيف الكاش القديم إن وجد
         
-        alert("تم حذف جميع البيانات بنجاح.\nسيعود التطبيق لحالة المصنع.");
+        alert("تم فرمتة النظام بنجاح.\nسيعود التطبيق لحالة المصنع.");
         localStorage.removeItem('store_name');
         localStorage.removeItem('admin_pass');
         location.reload();
