@@ -1,11 +1,12 @@
 // === إعدادات Firebase ===
 export const firebaseConfig = {
-    apiKey: "", // ضع مفتاح API هنا
-    authDomain: "", // ضع رابط الدومين هنا
-    projectId: "", // ضع معرف المشروع هنا
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyCUVXQLCbresck9xX5Pzmsz5BAL9U4Ujds",
+    authDomain: "gjldggj.firebaseapp.com",
+    databaseURL: "https://gjldggj-default-rtdb.firebaseio.com",
+    projectId: "gjldggj",
+    storageBucket: "gjldggj.firebasestorage.app",
+    messagingSenderId: "932989900371",
+    appId: "1:932989900371:web:749fea242e7cefc4e1d8a6"
 };
 
 export const hashPass = str => {
