@@ -443,8 +443,9 @@ window.shareAccountWhatsApp = function() {
     const storeName = localStorage.getItem('store_name') || 'إدارة المتجر';
     const storeWa = localStorage.getItem('store_whatsapp') || 'غير محدد';
     const balance = formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency);
+    const today = new Date().toISOString().split('T')[0];
 
-    const text = `مرحباً ${currentCustomer.name} 🌹\nنود إعلامكم بكشف الحساب الحالي لدى: ${storeName}\n\n💰 المبلغ المتبقي (الديون): ${balance}\n\n📞 للتواصل والاستفسار: ${storeWa}\nشكراً لتعاملكم معنا!`;
+    const text = `مرحباً ${currentCustomer.name} 🌹\nنود إعلامكم بكشف الحساب الحالي لدى: ${storeName}\n\n📅 تاريخ الكشف: ${today}\n💰 المبلغ المتبقي (الديون): ${balance}\n\n📞 للتواصل والاستفسار: ${storeWa}\nشكراً لتعاملكم معنا!`;
 
     const phone = currentCustomer.phone.replace(/[^0-9]/g, '');
     let formattedPhone = phone;
@@ -463,8 +464,10 @@ window.shareTransactionWhatsApp = function(type, amount, note, date) {
     const formattedAmount = formatCurrency(amount, currentCustomer.currency);
     const currentBalance = formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency);
     let typeName = type === 'debt' ? 'دين جديد' : (type === 'payment' ? 'دفعة تسديد' : 'فاتورة مبيعات');
+    
+    const printDate = (date && date !== 'undefined' && date !== 'null') ? date : new Date().toISOString().split('T')[0];
 
-    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${date}\n📌 التفاصيل: ${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الديون المتبقية: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
+    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${printDate}\n📌 التفاصيل: ${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الديون المتبقية: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
 
     const phone = currentCustomer.phone.replace(/[^0-9]/g, '');
     let formattedPhone = phone;
@@ -472,6 +475,63 @@ window.shareTransactionWhatsApp = function(type, amount, note, date) {
 
     const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+}
+
+// === إعداد الفواتير للطباعة عبر الطابعات الحرارية وتطبيقات الوساطة ===
+function generateReceiptText() {
+    if(!currentCustomer) return "";
+    const storeName = localStorage.getItem('store_name') || 'المتجر';
+    let text = `\n    ${storeName}    \n`;
+    text += `--------------------------------\n`;
+    text += `الزبون: ${currentCustomer.name}\n`;
+    text += `التاريخ: ${new Date().toISOString().split('T')[0]}\n`;
+    text += `--------------------------------\n`;
+    
+    // سحب العمليات المعروضة في القائمة الحالية
+    const transElements = document.querySelectorAll('#transactionsList .trans-item');
+    transElements.forEach(el => {
+        const typeName = el.querySelector('strong').innerText;
+        const details = el.querySelector('small').innerText;
+        const amount = el.querySelector('div:nth-child(2) strong').innerText;
+        const date = el.querySelectorAll('small')[1].innerText;
+        text += `${typeName} - ${amount}\n${details} (${date})\n\n`;
+    });
+    
+    text += `--------------------------------\n`;
+    text += `الرصيد المتبقي: ${formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency)}\n`;
+    text += `--------------------------------\n\n\n`;
+    return text;
+}
+
+window.printRawBT = function() {
+    const text = generateReceiptText();
+    // تحويل النص لتنسيق يقبله تطبيق RawBT كنية (Intent)
+    const encoded = encodeURIComponent(text);
+    const url = `intent:${encoded}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+    
+    // تذكير المستخدم لمرة واحدة بتحميل التطبيق
+    if(!localStorage.getItem('rawbt_hint_shown')) {
+        alert("تأكد من تنزيل تطبيق [RawBT] من سوق بلاي لضمان الطباعة، إذا لم يفتح التطبيق يرجى تثبيته أولاً.");
+        localStorage.setItem('rawbt_hint_shown', 'yes');
+    }
+    window.location.href = url;
+}
+
+window.printBluetooth = async function() {
+    if (!navigator.bluetooth) {
+        return alert("عذراً، متصفحك أو هاتفك لا يدعم تقنية ربط البلوتوث المباشر للويب. يرجى استخدام الخيار الثاني (تطبيق الطباعة).");
+    }
+    try {
+        const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // خدمة الطابعات الحرارية الشائعة
+        });
+        alert(`تم التعرف على الطابعة: ${device.name}\n\n(ملاحظة: إذا واجهت مشكلة في التوافق أو طباعة اللغة العربية، نوصي بشدة باستخدام زر "تطبيق الطباعة RawBT")`);
+        // في حال الحاجة المستقبلية لنقل البيانات مباشرة، يتم تجهيز الـ Characteristic هنا
+        // لكن تقنية RawBT أثبتت جدارتها مع الاندرويد 100%
+    } catch (err) {
+        alert("تعذر الاتصال بالبلوتوث المباشر. يرجى التحقق من تشغيل البلوتوث وتوصيل الطابعة، أو جرب (تطبيق الطباعة).");
+    }
 }
 
 window.downloadBackup = async function() {
