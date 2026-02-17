@@ -107,8 +107,9 @@ async function loadDashboard() {
             
             myTrans.forEach(t => {
                 const amt = parseFloat(t.amount) || 0;
-                if (t.type === 'debt' || t.type === 'sale') c.balance += amt;
-                if (t.type === 'payment') c.balance -= amt;
+                // تم عكس المعادلة الرياضية هنا حسب طلبك
+                if (t.type === 'debt' || t.type === 'sale') c.balance -= amt;
+                if (t.type === 'payment') c.balance += amt;
             });
             
             if(myTrans.length > 0 && c.balance > 0) {
@@ -386,8 +387,9 @@ window.openCustomer = async function(id) {
     let realTimeBalance = 0;
     trans.forEach(t => {
         const amt = parseFloat(t.amount) || 0;
-        if (t.type === 'debt' || t.type === 'sale') realTimeBalance += amt;
-        if (t.type === 'payment') realTimeBalance -= amt;
+        // تم عكس المعادلة الرياضية هنا حسب طلبك
+        if (t.type === 'debt' || t.type === 'sale') realTimeBalance -= amt;
+        if (t.type === 'payment') realTimeBalance += amt;
     });
 
     currentCustomer.realTimeBalance = realTimeBalance; // تحديث حالة الرصيد للزبون الحالي
@@ -445,7 +447,7 @@ window.shareAccountWhatsApp = function() {
     const balance = formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency);
     const today = new Date().toISOString().split('T')[0];
 
-    const text = `مرحباً ${currentCustomer.name} 🌹\nنود إعلامكم بكشف الحساب الحالي لدى: ${storeName}\n\n📅 تاريخ الكشف: ${today}\n💰 المبلغ المتبقي (الديون): ${balance}\n\n📞 للتواصل والاستفسار: ${storeWa}\nشكراً لتعاملكم معنا!`;
+    const text = `مرحباً ${currentCustomer.name} 🌹\nنود إعلامكم بكشف الحساب الحالي لدى: ${storeName}\n\n📅 تاريخ الكشف: ${today}\n💰 المبلغ المتبقي: ${balance}\n\n📞 للتواصل والاستفسار: ${storeWa}\nشكراً لتعاملكم معنا!`;
 
     const phone = currentCustomer.phone.replace(/[^0-9]/g, '');
     let formattedPhone = phone;
@@ -467,7 +469,7 @@ window.shareTransactionWhatsApp = function(type, amount, note, date) {
     
     const printDate = (date && date !== 'undefined' && date !== 'null') ? date : new Date().toISOString().split('T')[0];
 
-    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${printDate}\n📌 التفاصيل: ${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الديون المتبقية: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
+    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${printDate}\n📌 التفاصيل: ${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الرصيد المتبقي: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
 
     const phone = currentCustomer.phone.replace(/[^0-9]/g, '');
     let formattedPhone = phone;
@@ -477,41 +479,41 @@ window.shareTransactionWhatsApp = function(type, amount, note, date) {
     window.open(url, '_blank');
 }
 
-// === إعداد الفواتير للطباعة عبر الطابعات الحرارية وتطبيقات الوساطة ===
-function generateReceiptText() {
-    if(!currentCustomer) return "";
+// === إعداد الفواتير للطباعة عبر تطبيق RawBT بوضوح كصورة (HTML) ===
+window.printRawBT = function() {
+    if(!currentCustomer) return;
     const storeName = localStorage.getItem('store_name') || 'المتجر';
-    let text = `\n    ${storeName}    \n`;
-    text += `--------------------------------\n`;
-    text += `الزبون: ${currentCustomer.name}\n`;
-    text += `التاريخ: ${new Date().toISOString().split('T')[0]}\n`;
-    text += `--------------------------------\n`;
     
-    // سحب العمليات المعروضة في القائمة الحالية
+    // بناء وتنسيق الفاتورة كلغة HTML لكي يطبعها تطبيق RawBT كصورة واضحة
+    let html = `<html dir="rtl" lang="ar"><body style="font-family: Arial, sans-serif; text-align: center; color: black; background: white; margin: 0; padding: 10px;">`;
+    html += `<h2 style="margin-bottom: 5px;">${storeName}</h2>`;
+    html += `<hr style="border-top: 2px dashed black; margin: 10px 0;">`;
+    html += `<div>الزبون: <b>${currentCustomer.name}</b></div>`;
+    html += `<div>التاريخ: ${new Date().toISOString().split('T')[0]}</div>`;
+    html += `<hr style="border-top: 2px dashed black; margin: 10px 0;">`;
+    
     const transElements = document.querySelectorAll('#transactionsList .trans-item');
     transElements.forEach(el => {
         const typeName = el.querySelector('strong').innerText;
         const details = el.querySelector('small').innerText;
         const amount = el.querySelector('div:nth-child(2) strong').innerText;
         const date = el.querySelectorAll('small')[1].innerText;
-        text += `${typeName} - ${amount}\n${details} (${date})\n\n`;
+        html += `<div style="margin-bottom: 15px;">`;
+        html += `<b style="font-size: 22px;">${typeName} - ${amount}</b><br>`;
+        html += `<span style="font-size: 16px;">${details} (${date})</span>`;
+        html += `</div>`;
     });
     
-    text += `--------------------------------\n`;
-    text += `الرصيد المتبقي: ${formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency)}\n`;
-    text += `--------------------------------\n\n\n`;
-    return text;
-}
-
-window.printRawBT = function() {
-    const text = generateReceiptText();
-    // تحويل النص لتنسيق يقبله تطبيق RawBT كنية (Intent)
-    const encoded = encodeURIComponent(text);
-    const url = `intent:${encoded}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+    html += `<hr style="border-top: 2px dashed black; margin: 10px 0;">`;
+    html += `<h3>الرصيد المتبقي: ${formatCurrency(currentCustomer.realTimeBalance || 0, currentCustomer.currency)}</h3>`;
+    html += `</body></html>`;
     
-    // تذكير المستخدم لمرة واحدة بتحميل التطبيق
+    // تحويل النص لتنسيق HTML ليقوم التطبيق بطباعته كصورة معتمدة لتفادي مشكلة الطابعة
+    const encodedHtml = encodeURIComponent(html);
+    const url = `intent:${encodedHtml}#Intent;scheme=rawbt;type=text/html;package=ru.a402d.rawbtprinter;end;`;
+    
     if(!localStorage.getItem('rawbt_hint_shown')) {
-        alert("تأكد من تنزيل تطبيق [RawBT] من سوق بلاي لضمان الطباعة، إذا لم يفتح التطبيق يرجى تثبيته أولاً.");
+        alert("سيتم معالجة الفاتورة كصورة لطباعة اللغة العربية بشكل سليم عبر RawBT.");
         localStorage.setItem('rawbt_hint_shown', 'yes');
     }
     window.location.href = url;
