@@ -137,8 +137,10 @@
                         <div class="flex flex-between">
                             <h3>سجل العمليات</h3>
                             <div class="flex gap-2">
-                                <button class="btn btn-sm btn-success no-print gsap-btn" onclick="shareAccountWhatsApp()" style="background: #25D366; border: none;">📱 مشاركة الحساب</button>
-                                <button class="btn btn-sm btn-primary no-print gsap-btn" onclick="window.print()">🖨️</button>
+                                <button class="btn btn-sm btn-success no-print gsap-btn" onclick="shareAccountWhatsApp()" style="background: #25D366; border: none;" title="مشاركة الحساب عبر الواتساب">📱 مشاركة</button>
+                                <button class="btn btn-sm btn-info no-print gsap-btn" onclick="printRawBT()" title="تطبيق الطباعة RawBT">🖨️ تطبيق الطباعة</button>
+                                <button class="btn btn-sm btn-warning no-print gsap-btn" onclick="printBluetooth()" title="بحث عن طابعة بلوتوث">🖨️ بلوتوث</button>
+                                <button class="btn btn-sm btn-primary no-print gsap-btn" onclick="window.print()" title="طباعة الورقة من النظام مباشرة">🖨️</button>
                             </div>
                         </div>
                         <div id="transactionsList"></div>
