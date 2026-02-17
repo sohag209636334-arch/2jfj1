@@ -69,6 +69,7 @@ input:focus, select:focus, textarea:focus {
 .btn-success { background: linear-gradient(45deg, #17a2b8, #20c997); } /* تعديل إلى الفيروزي */
 .btn-danger { background: linear-gradient(45deg, #ff6b6b, #ee5253); }
 .btn-warning { background: linear-gradient(45deg, #feca57, #ff9f43); }
+.btn-info { background: linear-gradient(45deg, #0984e3, #74b9ff); color: #fff;}
 
 .btn-sm { padding: 8px 18px; font-size: 0.85rem; border-radius: 12px; }
 
@@ -94,4 +95,16 @@ input:focus, select:focus, textarea:focus {
 .modal { position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(43, 45, 66, 0.4); display:flex; justify-content:center; align-items:center; z-index: 1000; backdrop-filter: blur(8px); }
 .modal-content { width: 90%; max-width: 400px; background: rgba(255,255,255,0.95); border: 1px solid #fff; }
 
-@media print { .no-print, .bottom-nav { display: none; } }
+/* === إعدادات الطباعة الحرارية والمباشرة (الفواتير) === */
+@media print { 
+    @page { margin: 0; size: 80mm auto; } /* حجم الفاتورة الحرارية وعرضها، وإخفاء التاريخ ورابط الموقع التلقائي من المتصفح */
+    body { background: white; color: black; padding: 0; margin: 5px; font-size: 14px; direction: rtl; width: 100%; height: auto; overflow: visible; }
+    .no-print, .bottom-nav, #lock-screen, .modal { display: none !important; }
+    .container { width: 100%; max-width: 100%; padding: 5px; margin: 0; box-shadow: none; }
+    .card { border: none; box-shadow: none; margin: 0; padding: 5px 0; background: transparent; }
+    #view-customer { position: relative; background: white; height: auto; overflow: visible; display: block !important; }
+    * { text-shadow: none !important; box-shadow: none !important; }
+    
+    /* منع ظهور روابط الموقع المزعجة في الورقة المطبوعة */
+    a[href]:after { content: none !important; }
+}
