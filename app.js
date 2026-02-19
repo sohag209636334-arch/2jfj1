@@ -773,9 +773,9 @@ window.saveTransaction = async function() {
     // تجهيز نص المواد للفاتورة
     let itemsDescription = '';
     if (currentTransType === 'sale' && cartItems.length > 0) {
-        let details = cartItems.map(c => `${c.name} (x${c.qty})\n${c.total} x`).join('\n');
+        let details = cartItems.map(c => `- ${c.name} | السعر: ${c.price} | العدد: ${c.qty} | يساوي: ${c.total}`).join('\n');
         let formattedTotal = window.formatCurrency(amount, currentCustomer.currency);
-        itemsDescription = `1\n+\n${details}\nالمجموع:\n${formattedTotal}`;
+        itemsDescription = `تفاصيل المواد:\n${details}\n\nالمجموع الكلي: ${formattedTotal}`;
         if(note) itemsDescription += '\nملاحظة: ' + note;
     } else {
         if(note) itemsDescription = note;
