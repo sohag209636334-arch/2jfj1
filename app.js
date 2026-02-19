@@ -469,7 +469,7 @@ window.shareTransactionWhatsApp = function(type, amount, note, date) {
     
     const printDate = (date && date !== 'undefined' && date !== 'null') ? date : new Date().toISOString().split('T')[0];
 
-    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${printDate}\n📌 التفاصيل: ${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الرصيد المتبقي: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
+    const text = `مرحباً ${currentCustomer.name} 🌹\nإشعار بعملية جديدة من: ${storeName}\n\n📝 نوع العملية: ${typeName}\n💵 المبلغ: ${formattedAmount}\n📅 التاريخ: ${printDate}\n📌 التفاصيل:\n${note || 'لا يوجد'}\n\n━━━━━━━━━━━━\n💰 إجمالي الرصيد المتبقي: ${currentBalance}\n━━━━━━━━━━━━\n\n📞 للتواصل: ${storeWa}`;
 
     const phone = currentCustomer.phone.replace(/[^0-9]/g, '');
     let formattedPhone = phone;
@@ -771,8 +771,15 @@ window.saveTransaction = async function() {
     if(currentTransType === 'sale' && cartItems.length === 0 && !amount) return alert("أضف مواد للسلة أو أدخل مبلغاً");
 
     // تجهيز نص المواد للفاتورة
-    let itemsDescription = currentTransType === 'sale' ? cartItems.map(c => `${c.name} x${c.qty}`).join(', ') : '';
-    if(note) itemsDescription += (itemsDescription ? ' | ' : '') + note;
+    let itemsDescription = '';
+    if (currentTransType === 'sale' && cartItems.length > 0) {
+        let details = cartItems.map(c => `${c.name} (x${c.qty})\n${c.total} x`).join('\n');
+        let formattedTotal = window.formatCurrency(amount, currentCustomer.currency);
+        itemsDescription = `1\n+\n${details}\nالمجموع:\n${formattedTotal}`;
+        if(note) itemsDescription += '\nملاحظة: ' + note;
+    } else {
+        if(note) itemsDescription = note;
+    }
 
     try {
         // إذا كان بيع وفيه مواد مخزنية، نقوم بإنقاص الكمية وزيادة عدد المبيعات
